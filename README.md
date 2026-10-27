@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/sepehr071/iran-gold-mcp/main/.github/banner.png" alt="iran-gold-mcp: compare live 18k gold prices on Milli.gold, Wallgold, Melligold and Daric from Claude, Cursor or Copilot" width="100%">
+
 # iran-gold-mcp: live gold prices from Iranian gold platforms for AI agents
 
 **Compare the 18k gold price on Milli.gold, Wallgold, Melligold and Daric from your AI agent.**<br>
