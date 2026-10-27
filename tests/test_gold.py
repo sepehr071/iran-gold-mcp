@@ -1,6 +1,6 @@
 import httpx
 import pytest
-from conftest import fixture
+from conftest import fixture, page
 
 from iran_gold_mcp import http
 
@@ -15,6 +15,12 @@ PLATFORM_ROUTES = {
 }
 
 
+def serve_all(api):
+    for path, name in PLATFORM_ROUTES.items():
+        api[path] = fixture(name)
+    api["/"] = page("taline.html")  # Taline's homepage
+
+
 async def test_all_tools_are_read_only(client):
     tools = (await client.list_tools()).tools
     assert {t.name for t in tools} == {"gold_prices", "gold_milli_history", "gold_milli_stats"}
@@ -24,25 +30,24 @@ async def test_all_tools_are_read_only(client):
 
 
 async def test_prices_compare_platforms_in_toman_per_gram(client, api):
-    for path, name in PLATFORM_ROUTES.items():
-        api[path] = fixture(name)
+    serve_all(api)
     r = (await client.call_tool("gold_prices", {})).structured_content
     by = {row["platform"]: row for row in r["prices"]}
     assert by["milli"]["buy"] == by["milli"]["sell"] == 26_890_000  # 268,900 Rial/mg
     assert (by["wallgold"]["buy"], by["melligold"]["buy"]) == (26_220_000, 26_258_490)
     assert (by["daric"]["buy"], by["daric"]["sell"]) == (26_342_055, 26_233_555)  # ask, bid
-    assert [row["platform"] for row in r["prices"]] == ["wallgold", "melligold", "daric", "milli"]
+    assert (by["taline"]["buy"], by["taline"]["sell"]) == (26_248_400, 26_039_200)
+    assert [row["platform"] for row in r["prices"]] == ["wallgold", "taline", "melligold", "daric", "milli"]
     assert (r["best_to_buy"], r["best_to_sell"]) == ("wallgold", "milli")
     assert "failed" not in r
 
 
 async def test_prices_survive_one_platform_failing(client, api):
-    for path, name in PLATFORM_ROUTES.items():
-        api[path] = fixture(name)
+    serve_all(api)
     api["/api/v1/prices"] = lambda r: httpx.Response(403)
     api["/loan/api/v1/User/Collateral/GetGoldlPrice"] = lambda r: httpx.Response(200, json={"Data": None})
     r = (await client.call_tool("gold_prices", {})).structured_content
-    assert {row["platform"] for row in r["prices"]} == {"milli", "melligold"}
+    assert {row["platform"] for row in r["prices"]} == {"milli", "melligold", "taline"}
     assert "403" in r["failed"]["wallgold"] and "Daric returned no price" in r["failed"]["daric"]
 
 
@@ -122,8 +127,7 @@ async def test_week_stats_include_day_peak_and_live_price(client, api):
 
 
 async def test_requests_look_like_each_sites_own_traffic(client, api):
-    for path, name in PLATFORM_ROUTES.items():
-        api[path] = fixture(name)
+    serve_all(api)
     await client.call_tool("gold_prices", {})
     sent = {r.url.host: r.headers for r in api.calls}
     assert "origin" not in sent["milli.gold"] and sent["milli.gold"]["accept"] == "*/*"
@@ -131,3 +135,19 @@ async def test_requests_look_like_each_sites_own_traffic(client, api):
     assert sent["api.wallgold.ir"]["origin"] == "https://wallgold.ir"
     assert sent["apisc.daric.gold"]["accept"] == "application/json, text/plain, */*"
     assert sent["apisc.daric.gold"]["sec-fetch-site"] == "same-site"
+
+
+async def test_taline_outside_iran_is_a_clear_failure(client, api):
+    serve_all(api)
+    zero = page("taline.html")(None).text.replace("26248400", "0").replace("26039200", "0")
+    api["/"] = lambda r: httpx.Response(200, text=zero)
+    r = (await client.call_tool("gold_prices", {})).structured_content
+    assert "only to connections from Iran" in r["failed"]["taline"] and len(r["prices"]) == 4
+
+
+async def test_taline_page_is_fetched_like_a_typed_url(client, api):
+    serve_all(api)
+    await client.call_tool("gold_prices", {})
+    nav = next(r for r in api.calls if r.url.host == "taline.ir")
+    assert nav.headers["sec-fetch-mode"] == "navigate" and nav.headers["sec-fetch-site"] == "none"
+    assert "referer" not in nav.headers and "origin" not in nav.headers

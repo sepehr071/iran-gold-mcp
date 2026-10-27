@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any, Literal
 
 from pydantic import Field
 
-from .http import DARIC, MELLIGOLD, MILLI, WALLGOLD, ApiError, fetch
+from .http import DARIC, MELLIGOLD, MILLI, TALINE, WALLGOLD, ApiError, fetch
 from .registry import tool
 
 TEHRAN = timezone(timedelta(hours=3, minutes=30))  # no DST since 2022
@@ -60,21 +61,33 @@ async def _daric() -> tuple[int, int]:
     return _toman(_get(d, "BestSellPrice"), "Daric"), _toman(_get(d, "BestBuyPrice"), "Daric")
 
 
+async def _taline() -> tuple[int, int]:
+    # Taline's price API needs a login; its homepage calculator carries the live buy/sell price instead.
+    m = re.search(r"goldPrices\s*=\s*\{\s*buy:\s*(\d+),\s*sell:\s*(\d+)", await fetch(TALINE, text=True))
+    if m and m[1] == m[2] == "0":
+        raise ApiError(
+            "Taline shows its price only to connections from Iran. Set IRAN_GOLD_MCP_PROXY to an Iranian proxy."
+        )
+    return _toman(m and m[1], "Taline"), _toman(m and m[2], "Taline")
+
+
 PLATFORMS = {
     "milli": ("Milli.gold", "https://milli.gold", _milli),
     "wallgold": ("Wallgold", "https://wallgold.ir", _wallgold),
     "melligold": ("Melligold", "https://melligold.com", _melligold),
     "daric": ("Daric", "https://daric.gold", _daric),
+    "taline": ("Taline", "https://taline.ir", _taline),
 }
 
 
 @tool("Live gold prices on Iranian platforms")
 async def gold_prices() -> dict[str, Any]:
-    """Compare the live 18k melted-gold price on Milli.gold, Wallgold, Melligold and Daric, in Toman per gram.
+    """Compare the live 18k melted-gold price on Milli.gold, Wallgold, Melligold, Daric and Taline, in Toman per gram.
 
     `buy` is what you pay per gram on that platform, `sell` what you get back when you sell. Rows are sorted
     cheapest to buy first; `best_to_buy` and `best_to_sell` name the winners. A platform that did not answer is
-    listed under `failed` and the rest still return. Platform fees (often ~0.5 %) are not included. For the
+    listed under `failed` and the rest still return (Taline answers only connections from Iran). Platform fees
+    (often ~0.5 %) are not included. For the
     Milli.gold trend over a day, week or month use gold_milli_history.
     """
     results = await asyncio.gather(*(get() for _, _, get in PLATFORMS.values()), return_exceptions=True)

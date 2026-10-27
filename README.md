@@ -2,11 +2,11 @@
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/sepehr071/iran-gold-mcp/main/.github/banner.png" alt="iran-gold-mcp: compare live 18k gold prices on Milli.gold, Wallgold, Melligold and Daric from Claude, Cursor or Copilot" width="100%">
+<img src="https://raw.githubusercontent.com/sepehr071/iran-gold-mcp/main/.github/banner.png" alt="iran-gold-mcp: compare live 18k gold prices on Milli.gold, Wallgold, Melligold, Daric and Taline from Claude, Cursor or Copilot" width="100%">
 
 # iran-gold-mcp: live gold prices from Iranian gold platforms for AI agents
 
-**Compare the 18k gold price on Milli.gold, Wallgold, Melligold and Daric from your AI agent.**<br>
+**Compare the 18k gold price on Milli.gold, Wallgold, Melligold, Daric and Taline from your AI agent.**<br>
 An unofficial, read-only MCP server for Iranian online platforms that sell 18k melted gold (طلای آب&zwnj;شده):<br>
 live buy and sell price per gram on each platform, the cheapest place to buy, the best place to sell, and Milli.gold's price history.
 
@@ -27,7 +27,7 @@ live buy and sell price per gram on each platform, the cheapest place to buy, th
 
 ## For AI agents
 
-- **What:** unofficial MCP server (model context protocol) for the public price endpoints of four Iranian online gold platforms: milli.gold, wallgold.ir, melligold.com and daric.gold.
+- **What:** unofficial MCP server (model context protocol) for the public prices of five Iranian online gold platforms: milli.gold, wallgold.ir, melligold.com, daric.gold and taline.ir.
 - **Install:** `uvx iran-gold-mcp` or `claude mcp add iran-gold -- uvx iran-gold-mcp`. Transport: stdio. Needs [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python 3.10+).
 - **Auth:** none, no API key or account. Optional `IRAN_GOLD_MCP_PROXY` (HTTP proxy URL, or a comma-separated list); system proxy settings are ignored.
 - **Access:** read-only, so no confirmation is needed before calling any tool. It cannot log in, trade or read a wallet.
@@ -39,25 +39,26 @@ live buy and sell price per gram on each platform, the cheapest place to buy, th
 ## Why
 
 Every Iranian gold platform quotes its own price, in its own unit: Milli.gold in Rial per milligram, the others in
-Toman per gram, and Daric as an order book with a separate bid and ask. `iran-gold-mcp` reads all four at once,
+Toman per gram, Daric as an order book with a separate bid and ask, and Taline only on its homepage. `iran-gold-mcp` reads all five at
+once,
 converts them to Toman per gram and sorts them:
 
 > **You:** Where is 18k gold cheapest to buy right now?
 >
 > **Agent:** *calls* `gold_prices()`
 >
-> Milli.gold is cheapest at 26,019,000 Toman per gram, then Wallgold (26,202,000), Melligold (26,248,700) and Daric
-> (26,332,312). Platform fees are not included.
+> Milli.gold is cheapest at 25,935,000 Toman per gram, then Wallgold (26,078,000), Melligold (26,133,565), Daric
+> (26,209,064) and Taline (26,262,300). Platform fees are not included.
 
 <sub>Real prices from 2026-10-27; they change all the time.</sub>
 
 Example prompts:
 
-- "Compare the 18k gold price per gram on Milli, Wallgold, Melligold and Daric."
+- "Compare the 18k gold price per gram on Milli, Wallgold, Melligold, Daric and Taline."
 - "Where should I sell 2 grams of melted gold right now?"
 - "Show me Milli.gold's gold price for the last month. What were the high and the low?"
 - <span dir="rtl">قیمت طلای آب&zwnj;شده الان در کدام سایت ارزان&zwnj;تر است؟</span>
-- <span dir="rtl">قیمت هر گرم طلای ۱۸ عیار در میلی، وال&zwnj;گلد، ملی&zwnj;گلد و داریک را مقایسه کن.</span>
+- <span dir="rtl">قیمت هر گرم طلای ۱۸ عیار در میلی، وال&zwnj;گلد، ملی&zwnj;گلد، داریک و طلاین را مقایسه کن.</span>
 
 ## Quick start
 
@@ -125,7 +126,7 @@ All 3 tools are read-only and return compact JSON.
 
 | Tool | What it does |
 |---|---|
-| `gold_prices` | Compares the live 18k gold buy and sell price per gram (Toman) on Milli.gold, Wallgold, Melligold and Daric, cheapest first, with `best_to_buy` and `best_to_sell`. A platform that does not answer is listed under `failed`; the rest still return |
+| `gold_prices` | Compares the live 18k gold buy and sell price per gram (Toman) on Milli.gold, Wallgold, Melligold, Daric and Taline, cheapest first, with `best_to_buy` and `best_to_sell`. A platform that does not answer is listed under `failed`; the rest still return |
 | `gold_milli_history` | Gets the Milli.gold 18k gold price series for a day, week or month (`period`: `DAILY`, `WEEKLY`, `MONTHLY`; `points`: 2-50, default 24) with first, last, high, low and change percent |
 | `gold_milli_stats` | Gets Milli.gold's headline numbers: users, trade transactions, gold traded (kg), user balances (kg), burned gold (kg), branches and representatives |
 
@@ -137,7 +138,8 @@ All 3 tools are read-only and return compact JSON.
 - **Units.** Milli.gold quotes Rial per milligram; `gold_prices` converts it (x100 = Toman per gram). `gold_milli_history` keeps Rial per milligram.
 - **Tehran time.** `as_of` and history `time` values are Tehran time (UTC+3:30).
 - **15 s cache.** Repeated calls within 15 seconds reuse the answer.
-- **Not covered.** Taline (tlyn) shows its price only after login, so it is not included.
+- **Taline needs an Iranian connection.** Taline puts its price only on its homepage and only for visitors from Iran;
+  elsewhere it is listed under `failed`. Outside Iran set `IRAN_GOLD_MCP_PROXY` to an Iranian HTTP proxy.
 
 ## FAQ
 
@@ -151,7 +153,7 @@ Not an official one. `iran-gold-mcp` calls the public, login-free price endpoint
 <summary><b>How is it different from milligold-mcp and tgju-mcp?</b></summary>
 
 [milligold-mcp](https://github.com/sepehr071/milligold-mcp) covers Milli.gold only. `iran-gold-mcp` covers Milli.gold
-plus Wallgold, Melligold and Daric and compares them. [tgju-mcp](https://github.com/sepehr071/tgju-mcp) gives
+plus Wallgold, Melligold, Daric and Taline and compares them. [tgju-mcp](https://github.com/sepehr071/tgju-mcp) gives
 market-wide rates for dollar, coins, gold and crypto.
 </details>
 
@@ -179,12 +181,12 @@ Not by default. If requests are blocked from your network, set `IRAN_GOLD_MCP_PR
 
 <div dir="rtl">
 
-**iran-gold-mcp** یک سرور MCP غیررسمی و فقط&zwnj;خواندنی است که قیمت لحظه&zwnj;ای طلای ۱۸ عیار آب&zwnj;شده را از پلتفرم&zwnj;های آنلاین [میلی](https://milli.gold)، [وال&zwnj;گلد](https://wallgold.ir)، [ملی&zwnj;گلد](https://melligold.com) و [داریک](https://daric.gold) می&zwnj;خواند و مقایسه می&zwnj;کند.
+**iran-gold-mcp** یک سرور MCP غیررسمی و فقط&zwnj;خواندنی است که قیمت لحظه&zwnj;ای طلای ۱۸ عیار آب&zwnj;شده را از پلتفرم&zwnj;های آنلاین [میلی](https://milli.gold)، [وال&zwnj;گلد](https://wallgold.ir)، [ملی&zwnj;گلد](https://melligold.com)، [داریک](https://daric.gold) و [طلاین](https://taline.ir) می&zwnj;خواند و مقایسه می&zwnj;کند.
 
 - قیمت خرید و فروش هر گرم (تومان) در هر پلتفرم، از ارزان&zwnj;ترین به گران&zwnj;ترین، با بهترین جا برای خرید و فروش.
 - تاریخچه قیمت میلی در روز، هفته و ماه گذشته و آمار پلتفرم میلی.
 - فقط خواندنی است: خرید و فروش نمی&zwnj;کند و وارد حساب نمی&zwnj;شود. کارمزد پلتفرم&zwnj;ها در قیمت&zwnj;ها حساب نشده است.
-- طلاین قیمت را فقط بعد از ورود نشان می&zwnj;دهد و پشتیبانی نمی&zwnj;شود.
+- طلاین قیمت را فقط به بازدیدکننده&zwnj;های داخل ایران نشان می&zwnj;دهد؛ بیرون از ایران `IRAN_GOLD_MCP_PROXY` را روی یک پراکسی ایرانی بگذارید.
 
 </div>
 
@@ -211,7 +213,7 @@ uv build
 
 ## Disclaimer
 
-Unofficial and not affiliated with or endorsed by Milli.gold, Wallgold, Melligold or Daric. It is read-only and uses
+Unofficial and not affiliated with or endorsed by Milli.gold, Wallgold, Melligold, Daric or Taline. It is read-only and uses
 public endpoints that can change without notice. Prices are informational and not financial advice.
 
 ## Author

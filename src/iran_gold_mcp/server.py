@@ -13,7 +13,8 @@ from .registry import TOOLS
 
 INSTRUCTIONS = """\
 Unofficial, read-only access to the public prices of Iranian online platforms that sell 18k melted gold (طلای آب\u200cشده):
-Milli.gold, Wallgold, Melligold and Daric. Nothing here can log in, trade or touch a wallet.
+Milli.gold, Wallgold, Melligold, Daric and Taline. Nothing here can log in, trade or touch a wallet. Taline shows its
+price only to connections from Iran; elsewhere it is listed under `failed` and the user needs IRAN_GOLD_MCP_PROXY.
 
 Tools: gold_prices (live buy and sell price on every platform, cheapest first), gold_milli_history (Milli.gold day,
 week or month series with high, low and change), gold_milli_stats (Milli.gold users, trades, gold volumes).

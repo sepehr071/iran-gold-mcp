@@ -15,6 +15,12 @@ def fixture(name: str):
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
+def page(name: str):
+    """Route handler serving a saved HTML page."""
+    body = (FIXTURES / name).read_text(encoding="utf-8")
+    return lambda request: httpx.Response(200, text=body)
+
+
 @pytest.fixture
 def anyio_backend():
     return "asyncio"

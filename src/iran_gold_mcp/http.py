@@ -23,6 +23,7 @@ MILLI = "https://milli.gold/api/v1/public"
 WALLGOLD = "https://api.wallgold.ir/api/v1"
 MELLIGOLD = "https://melligold.com/api/v1/exchange"
 DARIC = "https://apisc.daric.gold"
+TALINE = "https://taline.ir/"
 
 HEADERS = {
     # User-Agent, sec-ch-ua and TLS come from the impersonated Chrome profile (see _get_client).
@@ -31,8 +32,19 @@ HEADERS = {
     "sec-fetch-mode": "cors",
     "priority": "u=1, i",
 }
+# A page (not an API) is fetched the way Chrome opens a typed URL: a navigation with no Referer or Origin.
+PAGE_HEADERS = {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,"
+    "application/signed-exchange;v=b3;q=0.7",
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "none",
+    "sec-fetch-user": "?1",
+    "upgrade-insecure-requests": "1",
+    "priority": "u=0, i",
+}
 
-MAX_CONCURRENCY = 4  # one call per platform at once; each host still sees at most one
+MAX_CONCURRENCY = 5  # one call per platform at once; each host still sees at most one
 JITTER = (0.1, 0.4)  # seconds before each uncached call
 MAX_RETRIES = 2
 MAX_RETRY_WAIT = 10  # cap for Retry-After and backoff, seconds
@@ -48,6 +60,7 @@ HOSTS = {
     "api.wallgold.ir": ("https://wallgold.ir", "same-site", AXIOS),
     "melligold.com": ("https://melligold.com", "same-origin", "*/*"),
     "apisc.daric.gold": ("https://daric.gold", "same-site", AXIOS),
+    "taline.ir": ("https://taline.ir", "none", None),  # read as a page, see PAGE_HEADERS
 }
 
 _transport: httpx.AsyncBaseTransport | None = None
@@ -59,13 +72,15 @@ _cache: dict[tuple, tuple[float, Any]] = {}
 
 
 class _XhrTransport(AsyncCurlTransport):
-    """The Chrome profile sends navigation-only headers; a None value makes curl drop them (API calls are XHR)."""
+    """The Chrome profile sends navigation-only headers; a None value makes curl drop them on XHR calls."""
 
     def _create_request_params(self, req: httpx.Request) -> dict[str, Any]:
         # The parent drops "accept: */*" as an httpx default; curl would then send Chrome's page Accept instead.
         accept = req.headers.get("accept")
         p = super()._create_request_params(req)
-        extra = [(b"upgrade-insecure-requests", None), (b"sec-fetch-user", None), (b"cache-control", None)]
+        extra = [(b"cache-control", None)]  # Chrome sends max-age=0 only on a reload
+        if req.headers.get("sec-fetch-mode") != "navigate":
+            extra += [(b"upgrade-insecure-requests", None), (b"sec-fetch-user", None)]
         p["headers"] = [*p["headers"], *extra, *([(b"accept", b"*/*")] if accept == "*/*" else [])]
         return p
 
@@ -137,8 +152,8 @@ def _get_client() -> tuple[httpx.AsyncClient, asyncio.Semaphore]:
     return _client, _limit
 
 
-async def fetch(url: str, params: dict[str, Any] | None = None) -> Any:
-    """GET an endpoint and return the parsed JSON body.
+async def fetch(url: str, params: dict[str, Any] | None = None, text: bool = False) -> Any:
+    """GET an endpoint and return the parsed JSON body, or the decoded body of a page when `text`.
 
     Retried up to MAX_RETRIES times on timeout, network error, 5xx or 429, with jittered exponential
     backoff or after Retry-After when sent. 403 is never retried.
@@ -147,13 +162,16 @@ async def fetch(url: str, params: dict[str, Any] | None = None) -> Any:
     host = httpx.URL(url).host
     if host not in HOSTS:
         raise ApiError(f"Refusing to call unexpected host {host}.")
-    key = (url, tuple(sorted(query.items())))
+    key = (url, tuple(sorted(query.items())), text)
     if (hit := _cache.get(key)) and time.monotonic() - hit[0] < CACHE_TTL:
         return copy.deepcopy(hit[1])
     site, fetch_site, accept = HOSTS[host]
-    headers = {"Referer": f"{site}/", "Accept": accept, "sec-fetch-site": fetch_site}
-    if fetch_site != "same-origin":
-        headers["Origin"] = site
+    if text:
+        headers = dict(PAGE_HEADERS)
+    else:
+        headers = {"Referer": f"{site}/", "Accept": accept, "sec-fetch-site": fetch_site}
+        if fetch_site != "same-origin":
+            headers["Origin"] = site
     for attempt in range(MAX_RETRIES + 1):
         last = attempt == MAX_RETRIES
         wait = RETRY_DELAY * 2**attempt * random.uniform(1, 1.5)
@@ -173,10 +191,13 @@ async def fetch(url: str, params: dict[str, Any] | None = None) -> Any:
 
     if r.status_code >= 400:
         raise ApiError(_status_message(r, host), r.status_code)
-    try:
-        body = json_lib.loads(content)
-    except ValueError as e:
-        raise ApiError(f"{host} returned a non-JSON response (HTTP {r.status_code}).", r.status_code) from e
+    if text:
+        body = content.decode("utf-8", "replace")
+    else:
+        try:
+            body = json_lib.loads(content)
+        except ValueError as e:
+            raise ApiError(f"{host} returned a non-JSON response (HTTP {r.status_code}).", r.status_code) from e
     if len(_cache) >= CACHE_MAX:
         _cache.pop(next(iter(_cache)))
     _cache[key] = (time.monotonic(), copy.deepcopy(body))

@@ -1,0 +1,68 @@
+<!doctype html><html lang="fa"><body>
+<input id="buy-gold-price"><input id="buy-gold-weight">
+<script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let priceInput = document.getElementById('buy-gold-price');
+            let weightInput = document.getElementById('buy-gold-weight');
+            let tabButtons = document.querySelectorAll(".tab-button");
+            
+            let goldPrices = { 
+                buy: 26248400, 
+                sell: 26039200 
+            };
+            
+            let activeType = "buy";
+            let buyInfo = document.getElementById("buy-info");
+            let sellInfo = document.getElementById("sell-info");
+
+            function formatNumber(value) {
+                return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+            function convertPersianToEnglish(str) {
+                return str.replace(/[۰-۹]/g, function (d) { return d.charCodeAt(0) - 1776; });
+            }
+
+            function updateCalculations() {
+                let weight = parseFloat(convertPersianToEnglish(weightInput.value));
+                if (!isNaN(weight) && goldPrices[activeType] > 0) {
+                    let totalPrice = weight * goldPrices[activeType];
+                    priceInput.value = formatNumber(totalPrice.toFixed(0));
+                }
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener("click", function () {
+                    tabButtons.forEach(btn => btn.classList.remove("active"));
+                    this.classList.add("active");
+                    activeType = this.getAttribute("data-type");
+
+                    const goldButton = document.querySelector(".gold-button");
+                    if (activeType === "buy") {
+                        goldButton.textContent = "خرید از طلاین";
+                        buyInfo.style.display = "block";
+                        sellInfo.style.display = "none";
+                    } else {
+                        goldButton.textContent = "فروش به طلاین";
+                        buyInfo.style.display = "none";
+                        sellInfo.style.display = "block";
+                    }
+                    updateCalculations();
+                });
+            });
+
+            weightInput.addEventListener('input', updateCalculations);
+
+            priceInput.addEventListener('input', function () {
+                let price = parseFloat(convertPersianToEnglish(this.value.replace(/,/g, '')));
+                if (!isNaN(price) && goldPrices[activeType] > 0) {
+                    let weight = price / goldPrices[activeType];
+                    weightInput.value = weight.toFixed(4);
+                } else {
+                    weightInput.value = "";
+                }
+                this.value = formatNumber(this.value.replace(/,/g, ''));
+            });
+        });
+    </script>
+</body></html>
