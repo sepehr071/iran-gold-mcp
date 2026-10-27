@@ -26,7 +26,6 @@ DARIC = "https://apisc.daric.gold"
 
 HEADERS = {
     # User-Agent, sec-ch-ua and TLS come from the impersonated Chrome profile (see _get_client).
-    "Accept": "application/json",
     "Accept-Language": "fa-IR,fa;q=0.9,en;q=0.8",
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
@@ -41,12 +40,14 @@ CACHE_TTL = 15  # seconds; live prices must stay fresh
 CACHE_MAX = 64
 RETRY_DELAY = 0.5  # seconds, doubled per retry
 MAX_BODY = 5_000_000  # bytes; larger responses are refused
-# API host -> (site the browser calls it from, sec-fetch-site); doubles as the host allowlist.
+AXIOS = "application/json, text/plain, */*"
+# API host -> (site the browser calls it from, sec-fetch-site, Accept), as each site's own frontend sends them
+# (checked in Chrome 2026-10-27); doubles as the host allowlist. Chrome sends Origin only on cross-origin calls.
 HOSTS = {
-    "milli.gold": ("https://milli.gold", "same-origin"),
-    "api.wallgold.ir": ("https://wallgold.ir", "same-site"),
-    "melligold.com": ("https://melligold.com", "same-origin"),
-    "apisc.daric.gold": ("https://daric.gold", "same-site"),
+    "milli.gold": ("https://milli.gold", "same-origin", "*/*"),
+    "api.wallgold.ir": ("https://wallgold.ir", "same-site", AXIOS),
+    "melligold.com": ("https://melligold.com", "same-origin", "*/*"),
+    "apisc.daric.gold": ("https://daric.gold", "same-site", AXIOS),
 }
 
 _transport: httpx.AsyncBaseTransport | None = None
@@ -61,8 +62,11 @@ class _XhrTransport(AsyncCurlTransport):
     """The Chrome profile sends navigation-only headers; a None value makes curl drop them (API calls are XHR)."""
 
     def _create_request_params(self, req: httpx.Request) -> dict[str, Any]:
+        # The parent drops "accept: */*" as an httpx default; curl would then send Chrome's page Accept instead.
+        accept = req.headers.get("accept")
         p = super()._create_request_params(req)
-        p["headers"] = [*p["headers"], (b"upgrade-insecure-requests", None), (b"sec-fetch-user", None)]
+        extra = [(b"upgrade-insecure-requests", None), (b"sec-fetch-user", None), (b"cache-control", None)]
+        p["headers"] = [*p["headers"], *extra, *([(b"accept", b"*/*")] if accept == "*/*" else [])]
         return p
 
 
@@ -146,8 +150,10 @@ async def fetch(url: str, params: dict[str, Any] | None = None) -> Any:
     key = (url, tuple(sorted(query.items())))
     if (hit := _cache.get(key)) and time.monotonic() - hit[0] < CACHE_TTL:
         return copy.deepcopy(hit[1])
-    site, fetch_site = HOSTS[host]
-    headers = {"Referer": f"{site}/", "Origin": site, "sec-fetch-site": fetch_site}
+    site, fetch_site, accept = HOSTS[host]
+    headers = {"Referer": f"{site}/", "Accept": accept, "sec-fetch-site": fetch_site}
+    if fetch_site != "same-origin":
+        headers["Origin"] = site
     for attempt in range(MAX_RETRIES + 1):
         last = attempt == MAX_RETRIES
         wait = RETRY_DELAY * 2**attempt * random.uniform(1, 1.5)

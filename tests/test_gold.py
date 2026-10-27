@@ -119,3 +119,15 @@ async def test_week_stats_include_day_peak_and_live_price(client, api):
     http._cache.clear()
     r = (await client.call_tool("gold_milli_history", {"period": "WEEKLY"})).structured_content
     assert r["high"] == 130 and r["last"] == 110
+
+
+async def test_requests_look_like_each_sites_own_traffic(client, api):
+    for path, name in PLATFORM_ROUTES.items():
+        api[path] = fixture(name)
+    await client.call_tool("gold_prices", {})
+    sent = {r.url.host: r.headers for r in api.calls}
+    assert "origin" not in sent["milli.gold"] and sent["milli.gold"]["accept"] == "*/*"
+    assert sent["milli.gold"]["sec-fetch-site"] == "same-origin"
+    assert sent["api.wallgold.ir"]["origin"] == "https://wallgold.ir"
+    assert sent["apisc.daric.gold"]["accept"] == "application/json, text/plain, */*"
+    assert sent["apisc.daric.gold"]["sec-fetch-site"] == "same-site"

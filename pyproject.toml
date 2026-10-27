@@ -1,6 +1,6 @@
 [project]
 name = "iran-gold-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "Unofficial read-only MCP server for live 18k gold prices on Iranian platforms: Milli.gold, Wallgold, Melligold, Daric."
 readme = "README.md"
 license = "MIT"
