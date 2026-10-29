@@ -210,6 +210,7 @@ uv build
 - [milligold-mcp](https://github.com/sepehr071/milligold-mcp) for Milli.gold only
 - [tgju-mcp](https://github.com/sepehr071/tgju-mcp) for dollar, euro, gold, coin, crypto and commodity prices from tgju.org
 - [iran-mcp](https://github.com/sepehr071/iran-mcp): catalog of all Iranian-service MCP servers
+- [mcpfarsi.ir](https://mcpfarsi.ir/): Persian marketplace of MCP servers for Iranian services
 
 ## Disclaimer
 
