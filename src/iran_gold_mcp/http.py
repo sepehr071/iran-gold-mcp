@@ -24,6 +24,7 @@ WALLGOLD = "https://api.wallgold.ir/api/v1"
 MELLIGOLD = "https://melligold.com/api/v1/exchange"
 DARIC = "https://apisc.daric.gold"
 TALINE = "https://taline.ir/"
+TALANO = "https://service.talano.ir/api/v1/market"
 
 HEADERS = {
     # User-Agent, sec-ch-ua and TLS come from the impersonated Chrome profile (see _get_client).
@@ -61,6 +62,7 @@ HOSTS = {
     "melligold.com": ("https://melligold.com", "same-origin", "*/*"),
     "apisc.daric.gold": ("https://daric.gold", "same-site", AXIOS),
     "taline.ir": ("https://taline.ir", "none", None),  # read as a page, see PAGE_HEADERS
+    "service.talano.ir": ("https://talano.ir", "same-site", AXIOS),
 }
 
 _transport: httpx.AsyncBaseTransport | None = None
