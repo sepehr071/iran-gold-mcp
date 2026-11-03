@@ -9,10 +9,11 @@ from typing import Annotated, Any, Literal
 
 from pydantic import Field
 
-from .http import DARIC, MELLIGOLD, MILLI, TALINE, WALLGOLD, ApiError, fetch
+from .http import DARIC, MELLIGOLD, MILLI, TALANO, TALINE, WALLGOLD, ApiError, fetch
 from .registry import tool
 
 TEHRAN = timezone(timedelta(hours=3, minutes=30))  # no DST since 2022
+TALANO_GOLD18 = "b0808638-7909-4468-83e9-ecac3d22499a"  # Talano's 18k melted-gold market
 
 
 def _data(body: Any, what: str) -> dict[str, Any]:
@@ -71,18 +72,27 @@ async def _taline() -> tuple[int, int]:
     return _toman(m and m[1], "Taline"), _toman(m and m[2], "Taline")
 
 
+async def _talano() -> tuple[int, int]:
+    d = await fetch(f"{TALANO}/price/", {"market_id": TALANO_GOLD18})
+    # Talano quotes thousand Toman per gram (25390 = 25,390,000 Toman).
+    buy, sell = _get(d, "buyPrice"), _get(d, "sellPrice")
+    return _toman(buy, "Talano") * 1000, _toman(sell, "Talano") * 1000
+
+
 PLATFORMS = {
     "milli": ("Milli.gold", "https://milli.gold", _milli),
     "wallgold": ("Wallgold", "https://wallgold.ir", _wallgold),
     "melligold": ("Melligold", "https://melligold.com", _melligold),
     "daric": ("Daric", "https://daric.gold", _daric),
     "taline": ("Taline", "https://taline.ir", _taline),
+    "talano": ("Talano", "https://talano.ir", _talano),
 }
 
 
 @tool("Live gold prices on Iranian platforms")
 async def gold_prices() -> dict[str, Any]:
-    """Compare the live 18k melted-gold price on Milli.gold, Wallgold, Melligold, Daric and Taline, in Toman per gram.
+    """Compare the live 18k melted-gold price on Milli.gold, Wallgold, Melligold, Daric, Taline and Talano, in Toman
+    per gram.
 
     `buy` is what you pay, `sell` what you get; rows are cheapest-buy first. Platforms that did not answer are listed
     under `failed`. Fees are not included. For Milli.gold trends use gold_milli_history.

@@ -12,6 +12,7 @@ PLATFORM_ROUTES = {
     "/api/v1/prices": "wallgold.json",
     "/api/v1/exchange/buy-sell-price/": "melligold.json",
     "/loan/api/v1/User/Collateral/GetGoldlPrice": "daric.json",
+    "/api/v1/market/price/": "talano.json",
 }
 
 
@@ -37,7 +38,8 @@ async def test_prices_compare_platforms_in_toman_per_gram(client, api):
     assert (by["wallgold"]["buy"], by["melligold"]["buy"]) == (26_220_000, 26_258_490)
     assert (by["daric"]["buy"], by["daric"]["sell"]) == (26_342_055, 26_233_555)  # ask, bid
     assert (by["taline"]["buy"], by["taline"]["sell"]) == (26_248_400, 26_039_200)
-    assert [row["platform"] for row in r["prices"]] == ["wallgold", "taline", "melligold", "daric", "milli"]
+    assert (by["talano"]["buy"], by["talano"]["sell"]) == (26_230_000, 25_968_000)  # thousand Toman x 1000
+    assert [row["platform"] for row in r["prices"]] == ["wallgold", "talano", "taline", "melligold", "daric", "milli"]
     assert (r["best_to_buy"], r["best_to_sell"]) == ("wallgold", "milli")
     assert "failed" not in r
 
@@ -47,7 +49,7 @@ async def test_prices_survive_one_platform_failing(client, api):
     api["/api/v1/prices"] = lambda r: httpx.Response(403)
     api["/loan/api/v1/User/Collateral/GetGoldlPrice"] = lambda r: httpx.Response(200, json={"Data": None})
     r = (await client.call_tool("gold_prices", {})).structured_content
-    assert {row["platform"] for row in r["prices"]} == {"milli", "melligold", "taline"}
+    assert {row["platform"] for row in r["prices"]} == {"milli", "melligold", "taline", "talano"}
     assert "403" in r["failed"]["wallgold"] and "Daric returned no price" in r["failed"]["daric"]
 
 
@@ -135,6 +137,14 @@ async def test_requests_look_like_each_sites_own_traffic(client, api):
     assert sent["api.wallgold.ir"]["origin"] == "https://wallgold.ir"
     assert sent["apisc.daric.gold"]["accept"] == "application/json, text/plain, */*"
     assert sent["apisc.daric.gold"]["sec-fetch-site"] == "same-site"
+    assert sent["service.talano.ir"]["origin"] == "https://talano.ir"
+
+
+async def test_talano_asks_for_the_18k_market(client, api):
+    serve_all(api)
+    await client.call_tool("gold_prices", {})
+    req = next(r for r in api.calls if r.url.host == "service.talano.ir")
+    assert req.url.params["market_id"] == "b0808638-7909-4468-83e9-ecac3d22499a"
 
 
 async def test_taline_outside_iran_is_a_clear_failure(client, api):
@@ -142,7 +152,7 @@ async def test_taline_outside_iran_is_a_clear_failure(client, api):
     zero = page("taline.html")(None).text.replace("26248400", "0").replace("26039200", "0")
     api["/"] = lambda r: httpx.Response(200, text=zero)
     r = (await client.call_tool("gold_prices", {})).structured_content
-    assert "only to connections from Iran" in r["failed"]["taline"] and len(r["prices"]) == 4
+    assert "only to connections from Iran" in r["failed"]["taline"] and len(r["prices"]) == 5
 
 
 async def test_taline_page_is_fetched_like_a_typed_url(client, api):

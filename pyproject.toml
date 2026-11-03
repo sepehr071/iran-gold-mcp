@@ -1,13 +1,13 @@
 [project]
 name = "iran-gold-mcp"
-version = "0.3.0"
-description = "Unofficial read-only MCP server for live 18k gold prices on Iranian platforms: Milli.gold, Wallgold, Melligold, Daric, Taline."
+version = "0.4.0"
+description = "Unofficial read-only MCP server for live 18k gold prices on Iranian platforms: Milli.gold, Wallgold, Melligold, Daric, Taline, Talano."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Sepehr Radmard", email = "sepehrr80@gmail.com" }]
 requires-python = ">=3.10"
-keywords = ["mcp", "model-context-protocol", "milli-gold", "wallgold", "melligold", "daric", "taline", "iran", "gold", "prices"]
+keywords = ["mcp", "model-context-protocol", "milli-gold", "wallgold", "melligold", "daric", "taline", "talano", "iran", "gold", "prices"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

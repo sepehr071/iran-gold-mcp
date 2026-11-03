@@ -2,19 +2,19 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.sepehr071/iran-gold-mcp",
   "title": "Iran Gold Prices",
-  "description": "Read-only live 18k gold prices on Iranian sites: Milli.gold, Wallgold, Melligold, Daric, Taline.",
+  "description": "Read-only live 18k gold prices on Iranian sites: Milli.gold, Wallgold, Melligold, Daric, Taline, Talano.",
   "repository": {
     "url": "https://github.com/sepehr071/iran-gold-mcp",
     "source": "github"
   },
   "websiteUrl": "https://github.com/sepehr071/iran-gold-mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "iran-gold-mcp",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
