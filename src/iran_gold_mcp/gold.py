@@ -84,11 +84,8 @@ PLATFORMS = {
 async def gold_prices() -> dict[str, Any]:
     """Compare the live 18k melted-gold price on Milli.gold, Wallgold, Melligold, Daric and Taline, in Toman per gram.
 
-    `buy` is what you pay per gram on that platform, `sell` what you get back when you sell. Rows are sorted
-    cheapest to buy first; `best_to_buy` and `best_to_sell` name the winners. A platform that did not answer is
-    listed under `failed` and the rest still return (Taline answers only connections from Iran). Platform fees
-    (often ~0.5 %) are not included. For the
-    Milli.gold trend over a day, week or month use gold_milli_history.
+    `buy` is what you pay, `sell` what you get; rows are cheapest-buy first. Platforms that did not answer are listed
+    under `failed`. Fees are not included. For Milli.gold trends use gold_milli_history.
     """
     results = await asyncio.gather(*(get() for _, _, get in PLATFORMS.values()), return_exceptions=True)
     rows, failed = [], {}
@@ -106,7 +103,6 @@ async def gold_prices() -> dict[str, Any]:
     return {
         "as_of": datetime.now(TEHRAN).strftime("%Y-%m-%d %H:%M"),
         "unit": "toman_per_gram",
-        "karat": 18,
         "best_to_buy": rows[0]["platform"],
         "best_to_sell": max(rows, key=lambda r: r["sell"])["platform"],
         "prices": rows,
@@ -124,10 +120,14 @@ async def gold_milli_history(
 ) -> dict[str, Any]:
     """Get the Milli.gold 18k gold price series for a day, week or month, with high, low and change.
 
-    Prices are Rial per milligram (x100 = Toman per gram); `time` is Tehran time. Points are thinned evenly to
-    `points`. For today's price on every platform use gold_prices.
+    Rial per milligram (x100 = Toman per gram), Tehran time. For today's price on every platform use gold_prices.
     """
-    prices = _data(await fetch(f"{MILLI}/milli-price/widget/external"), "price history").get("prices")
+    hist, live = await asyncio.gather(
+        fetch(f"{MILLI}/milli-price/widget/external"), fetch(f"{MILLI}/milli-price/external"), return_exceptions=True
+    )
+    if isinstance(hist, BaseException):
+        raise hist
+    prices = _data(hist, "price history").get("prices")
     series = prices.get(period) if isinstance(prices, dict) else None
     if not series or not all(isinstance(p, dict) and p.get("timestamp") and p.get("value") for p in series):
         raise ApiError(f"Milli.gold returned no {period} history.")
@@ -142,7 +142,9 @@ async def gold_milli_history(
     ]
     values = [p["value"] for p in sorted(every, key=lambda p: p["timestamp"])]
     try:
-        values.append(_data(await fetch(f"{MILLI}/milli-price/external"), "price")["price18"])
+        if isinstance(live, BaseException):
+            raise live
+        values.append(_data(live, "price")["price18"])
     except (ApiError, KeyError):
         pass  # live price is a refinement; the series alone is still valid
     step = (len(series) - 1) / (points - 1)
@@ -170,7 +172,7 @@ async def gold_milli_history(
 async def gold_milli_stats() -> dict[str, Any]:
     """Get Milli.gold's headline numbers: users, trades, gold traded, gold held and branches.
 
-    Figures are rounded totals the company publishes; weights are in kilograms. For prices use gold_prices.
+    Rounded published totals; weights in kilograms. For prices use gold_prices.
     """
     d = _data(await fetch(f"{MILLI}/milli-overall-report"), "statistics")
     return {
