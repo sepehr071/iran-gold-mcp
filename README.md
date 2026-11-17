@@ -14,7 +14,7 @@ live buy and sell price per gram on each platform, the cheapest place to buy, th
 [![Python](https://img.shields.io/pypi/pyversions/iran-gold-mcp)](https://pypi.org/project/iran-gold-mcp/)
 [![CI](https://github.com/sepehr071/iran-gold-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/sepehr071/iran-gold-mcp/actions/workflows/ci.yml)
 [![MCP Registry](https://img.shields.io/badge/MCP_Registry-io.github.sepehr071%2Firan--gold--mcp-7c3aed)](https://registry.modelcontextprotocol.io/?q=iran-gold-mcp)
-[![License: MIT](https://img.shields.io/badge/license-MIT-16a34a)](https://github.com/sepehr071/iran-gold-mcp/blob/main/LICENSE)
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-c2410c)](https://github.com/sepehr071/iran-gold-mcp/blob/main/LICENSE)
 
 [![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=iran-gold&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJpcmFuLWdvbGQtbWNwIl19)
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_iran--gold--mcp-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=iran-gold&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22iran-gold-mcp%22%5D%7D)
@@ -223,6 +223,10 @@ public endpoints that can change without notice. Prices are informational and no
 
 Built and maintained by **Sepehr Radmard** (سپهر رادمرد). Connect on [LinkedIn](https://www.linkedin.com/in/sepehr-radmard) or follow [@sepehr071 on GitHub](https://github.com/sepehr071) for more MCP servers for Iranian websites, all listed in [iran-mcp](https://github.com/sepehr071/iran-mcp).
 
-## License
+## مجوز استفاده (License)
 
-[MIT](https://github.com/sepehr071/iran-gold-mcp/blob/main/LICENSE)
+<a href="https://www.linkedin.com/in/sepehr-radmard"><img src="https://raw.githubusercontent.com/sepehr071/iran-mcp/main/assets/license-banner.png" alt="استفادهٔ شخصی و غیرتجاری رایگان است؛ برای استفادهٔ تجاری با سپهر رادمرد تماس بگیرید. Free for personal and non-commercial use; commercial use needs a license." width="100%"></a>
+
+**استفادهٔ شخصی و غیرتجاری رایگان است.** استفاده در شرکت، محصول پولی یا پروژهٔ مشتری به مجوز تجاری نیاز دارد؛ از راه [لینکدین](https://www.linkedin.com/in/sepehr-radmard) یا [گیت&zwnj;هاب](https://github.com/sepehr071) با سپهر رادمرد تماس بگیرید. متن کامل: [PolyForm Noncommercial 1.0.0](https://github.com/sepehr071/iran-gold-mcp/blob/main/LICENSE). نسخه&zwnj;های پیش از 0.4.2 با مجوز MIT منتشر شده&zwnj;اند و همان مجوز را دارند.
+
+Free for personal and non-commercial use under the [PolyForm Noncommercial License 1.0.0](https://github.com/sepehr071/iran-gold-mcp/blob/main/LICENSE). Using it in a company, a paid product or a client project needs a commercial license: contact Sepehr Radmard on [LinkedIn](https://www.linkedin.com/in/sepehr-radmard) or [GitHub](https://github.com/sepehr071). Versions before 0.4.2 were released under MIT and stay under it.
